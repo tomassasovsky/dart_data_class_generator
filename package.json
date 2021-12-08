@@ -3,7 +3,7 @@
 	"displayName": "Dart Data Class Generator",
 	"description": "Create dart data classes easily, fast and without writing boilerplate or running code generation.",
 	"publisher": "BendixMa",
-	"version": "0.5.1",
+	"version": "0.5.2",
 	"engines": {
 		"vscode": "^1.37.0"
 	},
@@ -47,6 +47,16 @@
 			{
 				"title": "Dart Data Class Generator configuration",
 				"properties": {
+					"dart_data_class_generator.json.key_format": {
+						"type": "string",
+						"enum": [
+							"variable",
+							"camelCase",
+							"snake_case"
+						],
+						"default": "variable",
+						"description": "The key format for json serialization."
+					},
 					"dart_data_class_generator.quick_fixes": {
 						"type": "boolean",
 						"enum": [

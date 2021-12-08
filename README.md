@@ -88,6 +88,8 @@ Sort imports alphabetically and bring them into the correct format easily.
 
 You can customize the generator to only generate the functions you want in your settings file.
 
+* `dart_data_class_generator.json.key_format`: Whether to use snake_case or camelCase for the
+json keys.
 * `dart_data_class_generator.quick_fixes`: If true, enables quick fixes to quickly generate data classes or specific methods only.
 * `dart_data_class_generator.useEquatable`: If true, uses Equatable for value equality and hashCode.
 * `dart_data_class_generator.fromMap.default_values`: If true, checks if a field is null when deserializing and provides a non-null default value.

@@ -1,6 +1,7 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
+const { IndexKind } = require('typescript');
 
 var projectName = '';
 var isFlutter = false;
@@ -530,6 +531,9 @@ class Imports {
         }
 
         let imps = '';
+        /**
+         * @param {any[]} imports
+         */
         function addImports(imports) {
             imports.sort();
             for (let i = 0; i < imports.length; i++) {
@@ -602,13 +606,13 @@ class ClassField {
      */
     constructor(type, name, line = 1, isFinal = true, isConst = false) {
         this.rawType = type;
-        this.jsonName = name;
         this.name = toVarName(name);
+        this.key = varToKey(this.name);
         this.line = line;
         this.isFinal = isFinal;
         this.isConst = isConst;
         this.isEnum = false;
-        this.isCollectionType = (type) => this.rawType == type || this.rawType.startsWith(type + '<');
+        this.isCollectionType = (/** @type {string} */ type) => this.rawType == type || this.rawType.startsWith(type + '<');
     }
 
     get type() {
@@ -791,7 +795,7 @@ class DataClassGenerator {
      * @param {DartClass} clazz
      */
     findPart(name, finder, clazz) {
-        const normalize = (src) => {
+        const normalize = (/** @type {string} */ src) => {
             let result = '';
             let generics = 0;
             let prevChar = '';
@@ -1088,7 +1092,7 @@ class DataClassGenerator {
         let method = `Map<String, dynamic> toMap() {\n`;
         method += '  return {\n';
         for (let p of props) {
-            method += `    '${p.jsonName}': `;
+            method += `    '${p.key}': `;
 
             if (p.isEnum) {
                 method += `${p.name}?.index,\n`;
@@ -1115,15 +1119,13 @@ class DataClassGenerator {
     insertFromMap(clazz) {
         let withDefaultValues = readSetting('fromMap.default_values');
         let props = clazz.properties;
-        const fromJSON = this.fromJSON;
 
         /**
          * @param {ClassField} prop
          */
         function customTypeMapping(prop, value = null) {
             prop = prop.isCollection ? prop.listType : prop;
-            const addDefault = withDefaultValues && prop.rawType != 'dynamic';
-            value = value == null ? "map['" + prop.jsonName + "']" : value;
+            value = value == null ? "map['" + prop.key + "']" : value;
 
             switch (prop.type) {
                 case 'DateTime':
@@ -1133,7 +1135,7 @@ class DataClassGenerator {
                 case 'IconData':
                     return `IconData(${value}, fontFamily: 'MaterialIcons')`
                 default:
-                    return `${!prop.isPrimitive ? prop.type + '.fromMap(' : ''}${value}${!prop.isPrimitive ? ')' : ''}${fromJSON ? (prop.isDouble ? '?.toDouble()' : prop.isInt ? '?.toInt()' : '') : ''}${addDefault && !prop.isNullable ? ` ?? ${prop.defValue}` : ''}`;
+                    return `${prop.type + '.fromMap('}${value}')'`;
             }
         }
 
@@ -1142,17 +1144,16 @@ class DataClassGenerator {
         for (let p of props) {
             method += `    ${clazz.hasNamedConstructor ? `${p.name}: ` : ''}`;
 
-            const value = `map['${p.jsonName}']`;
+            const value = `map['${p.key}']`;
+            const addNullCheck = !p.isPrimitive && p.isNullable;
 
-            // Add nullable check before serialization
-            if (p.isNullable) {
-                method += value + ' != null ? '
+            if (addNullCheck) {
+                method += `${value} != null ? `;
             }
 
             // serialization
             if (p.isEnum) {
-                const defaultValue = withDefaultValues ? ' ?? 0' : '';
-                method += `${p.rawType}.values[${value}${defaultValue}]`;
+                method += `${p.rawType}.values[${value} ?? 0]`;
             } else if (p.isCollection) {
                 const defaultValue = withDefaultValues && !p.isNullable ? ` ?? const ${p.isList ? '[]' : '{}'}` : '';
 
@@ -1162,13 +1163,15 @@ class DataClassGenerator {
                 } else {
                     method += `${value}?.map((x) => ${customTypeMapping(p, 'x')})${defaultValue})`;
                 }
+            } else if (p.isPrimitive) {
+                const defaultValue = !p.isNullable ? ` ?? ${p.defValue}` : '';
+                method += `${value}${p.isDouble ? '?.toDouble()' : p.isInt ? '?.toInt()' : ''}${defaultValue}`;
             } else {
                 method += customTypeMapping(p);
             }
 
-            // end nullable check if field is nullable
-            if (p.isNullable) {
-                method += " : null";
+            if (addNullCheck) {
+                method += ` : null`;
             }
 
             method += ',\n';
@@ -1205,36 +1208,29 @@ class DataClassGenerator {
      * @param {DartClass} clazz
      */
     insertToString(clazz) {
-        if (clazz.usesEquatable || readSetting('useEquatable')) {
-            let stringify = '@override\n';
-            stringify += 'bool get stringify => true;'
+        const short = clazz.fewProps;
+        const props = clazz.properties;
+        let method = '@override\n';
+        method += `String toString() ${!short ? '{\n' : '=>'}`;
+        method += `${!short ? '  return' : ''} '` + `${clazz.name}(`;
+        for (let p of props) {
+            const name = p.name;
+            const isFirst = name == props[0].name;
+            const isLast = name == props[props.length - 1].name;
 
-            this.appendOrReplace('stringify', stringify, 'bool get stringify', clazz);
-        } else {
-            const short = clazz.fewProps;
-            const props = clazz.properties;
-            let method = '@override\n';
-            method += `String toString() ${!short ? '{\n' : '=>'}`;
-            method += `${!short ? '  return' : ''} '` + `${clazz.name}(`;
-            for (let p of props) {
-                const name = p.name;
-                const isFirst = name == props[0].name;
-                const isLast = name == props[props.length - 1].name;
+            if (!isFirst)
+                method += ' ';
 
-                if (!isFirst)
-                    method += ' ';
+            method += name + ': $' + name + ',';
 
-                method += name + ': $' + name + ',';
-
-                if (isLast) {
-                    method = removeEnd(method, ',');
-                    method += ")';" + (short ? '' : '\n');
-                }
+            if (isLast) {
+                method = removeEnd(method, ',');
+                method += ")';" + (short ? '' : '\n');
             }
-            method += !short ? '}' : '';
-
-            this.appendOrReplace('toString', method, 'String toString()', clazz);
         }
+        method += !short ? '}' : '';
+
+        this.appendOrReplace('toString', method, 'String toString()', clazz);
     }
 
     /**
@@ -1770,7 +1766,8 @@ class JsonReader {
         clazz.classContent += 'class ' + clazz.name + ' {\n';
         for (let key in object) {
             // named key for class names.
-            let k = !isArray ? key : removeEnd(clazz.name.toLowerCase(), 's');
+            var k = !isArray ? key : removeEnd(clazz.name.toLowerCase(), 's');
+            k = camelCase(k)
 
             let value = object[key];
             let type = this.getPrimitive(value);
@@ -1796,7 +1793,7 @@ class JsonReader {
                     }
                 } else {
                     this.getClazzes(value, k);
-                    type = !isArray ? capitalize(key) : `List<${capitalize(k)}>`;
+                    type = !isArray ? capitalize(k) : `List<${capitalize(k)}>`;
                 }
             }
 
@@ -2227,7 +2224,7 @@ async function writeFile(content, name, open = true, path = getCurrentPath()) {
         } while (fs.existsSync(p));
     }
 
-    fs.writeFileSync(p, content, 'utf-8');
+    fs.writeFileSync(p, content, 'utf8');
     if (open) {
         let openPath = vscode.Uri.parse("file:///" + p);
         let doc = await vscode.workspace.openTextDocument(openPath);
@@ -2268,46 +2265,54 @@ function toVarName(source) {
         r = s;
 
     // Prevent dart keywords from being used.
-    switch (r) {
-        case 'assert': r = 'aAssert'; break;
-        case 'break': r = 'bBreak'; break;
-        case 'case': r = 'cCase'; break;
-        case 'catch': r = 'cCatch'; break;
-        case 'class': r = 'cClass'; break;
-        case 'const': r = 'cConst'; break;
-        case 'continue': r = 'cContinue'; break;
-        case 'default': r = 'dDefault'; break;
-        case 'do': r = 'dDo'; break;
-        case 'else': r = 'eElse'; break;
-        case 'enum': r = 'eEnum'; break;
-        case 'extends': r = 'eExtends'; break;
-        case 'false': r = 'fFalse'; break;
-        case 'final': r = 'fFinal'; break;
-        case 'finally': r = 'fFinally'; break;
-        case 'for': r = 'fFor'; break;
-        case 'if': r = 'iIf'; break;
-        case 'in': r = 'iIn'; break;
-        case 'is': r = 'iIs'; break;
-        case 'new': r = 'nNew'; break;
-        case 'null': r = 'nNull'; break;
-        case 'rethrow': r = 'rRethrow'; break;
-        case 'return': r = 'rReturn'; break;
-        case 'super': r = 'sSuper'; break;
-        case 'switch': r = 'sSwitch'; break;
-        case 'this': r = 'tThis'; break;
-        case 'throw': r = 'tThrow'; break;
-        case 'true': r = 'tTrue'; break;
-        case 'try': r = 'tTry'; break;
-        case 'var': r = 'vVar'; break;
-        case 'void': r = 'vVoid'; break;
-        case 'while': r = 'wWhile'; break;
-        case 'with': r = 'wWith'; break;
+    const keywords = [
+        'assert', 'break', 'case', 'catch', 'class', 'const', 'continue',
+        'default', 'do', 'else', 'enum', 'extends', 'false', 'final',
+        'finally', 'for', 'if', 'in', 'is', 'new', 'null', 'rethrow',
+        'return', 'super', 'switch', 'this', 'throw', 'true', 'try',
+        'var', 'void', 'while', 'with'
+    ];
+
+    if (keywords.includes(r)) {
+        r = r + '_';
     }
 
     if (r.length > 0 && r[0].match(new RegExp(/[0-9]/)))
         r = 'n' + r;
 
     return r;
+}
+
+function camelCase(str) {
+    const snakeToCamel =
+        str.replace(/([-_][a-z])/g, group =>
+            group
+                .toUpperCase()
+                .replace('-', '')
+                .replace('_', '')
+        );
+
+    return snakeToCamel;
+}
+
+/**
+ * @param {string} src
+ */
+function varToKey(src) {
+    const snakeCase = string => {
+        return string.replace(/\W+/g, " ")
+            .split(/ |\B(?=[A-Z])/)
+            .map(word => word.toLowerCase())
+            .join('_');
+    };
+
+    const format = readSetting("json.key_format")
+
+    switch (format) {
+        case 'snake_case': return snakeCase(src);
+        case 'camelCase': return camelCase(src);
+        default: return src;
+    }
 }
 
 /**
