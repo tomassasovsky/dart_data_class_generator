@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.5.2
+
+Added support for snake_case json keys
+Generate toString() when converting with Equatable
+Other improvements
+
 ## 0.5.0
 
 Added support for enums

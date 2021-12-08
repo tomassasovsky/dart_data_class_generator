@@ -604,10 +604,10 @@ class ClassField {
      * @param {boolean} isFinal
      * @param {boolean} isConst
      */
-    constructor(type, name, line = 1, isFinal = true, isConst = false) {
+    constructor(type, name, line = 1, isFinal = true, isConst = false, json = false) {
         this.rawType = type;
         this.name = toVarName(name);
-        this.key = varToKey(this.name);
+        this.key = json ? name : varToKey(this.name);
         this.line = line;
         this.isFinal = isFinal;
         this.isConst = isConst;
@@ -639,7 +639,7 @@ class ClassField {
         return this.isList || this.isMap || this.isSet;
     }
 
-    get listType() {
+    get collectionType() {
         if (this.isList || this.isSet) {
             const collection = this.isSet ? 'Set' : 'List';
             const type = this.rawType == collection ? 'dynamic' : this.rawType.replace(collection + '<', '').replace('>', '');
@@ -650,7 +650,7 @@ class ClassField {
     }
 
     get isPrimitive() {
-        let t = this.listType.type;
+        let t = this.collectionType.type;
         return t == 'String' || t == 'num' || t == 'dynamic' || t == 'bool' || this.isDouble || this.isInt || this.isMap;
     }
 
@@ -677,11 +677,11 @@ class ClassField {
     }
 
     get isInt() {
-        return this.listType.type == 'int';
+        return this.collectionType.type == 'int';
     }
 
     get isDouble() {
-        return this.listType.type == 'double';
+        return this.collectionType.type == 'double';
     }
 }
 
@@ -1072,7 +1072,7 @@ class DataClassGenerator {
          * @param {ClassField} prop
          */
         function customTypeMapping(prop, name = null, endFlag = ',\n') {
-            prop = prop.isCollection ? prop.listType : prop;
+            prop = prop.isCollection ? prop.collectionType : prop;
             name = name == null ? prop.name : name;
 
             const nullSafe = prop.isNullable ? '?' : '';
@@ -1097,11 +1097,13 @@ class DataClassGenerator {
             if (p.isEnum) {
                 method += `${p.name}?.index,\n`;
             } else if (p.isCollection) {
-                if (p.isMap || p.listType.isPrimitive) {
-                    const mapFlag = p.isSet ? (p.isNullable ? '?' : '') + '.toList()' : '';
+                const nullSafe = p.isNullable ? '?' : '';
+
+                if (p.isMap || p.collectionType.isPrimitive) {
+                    const mapFlag = p.isSet ? `${nullSafe}.toList()` : '';
                     method += `${p.name}${mapFlag},\n`;
                 } else {
-                    method += `${p.name}?.map((x) => ${customTypeMapping(p, 'x', '')})?.toList(),\n`
+                    method += `${p.name}${nullSafe}.map((x) => ${customTypeMapping(p, 'x', '')})${nullSafe}.toList(),\n`
                 }
             } else {
                 method += customTypeMapping(p);
@@ -1124,7 +1126,7 @@ class DataClassGenerator {
          * @param {ClassField} prop
          */
         function customTypeMapping(prop, value = null) {
-            prop = prop.isCollection ? prop.listType : prop;
+            prop = prop.isCollection ? prop.collectionType : prop;
             value = value == null ? "map['" + prop.key + "']" : value;
 
             switch (prop.type) {
@@ -1135,7 +1137,7 @@ class DataClassGenerator {
                 case 'IconData':
                     return `IconData(${value}, fontFamily: 'MaterialIcons')`
                 default:
-                    return `${prop.type + '.fromMap('}${value}')'`;
+                    return `${prop.type + '.fromMap('}${value})`;
             }
         }
 
@@ -1766,8 +1768,7 @@ class JsonReader {
         clazz.classContent += 'class ' + clazz.name + ' {\n';
         for (let key in object) {
             // named key for class names.
-            var k = !isArray ? key : removeEnd(clazz.name.toLowerCase(), 's');
-            k = camelCase(k)
+            let k = !isArray ? key : removeEnd(clazz.name.toLowerCase(), 's');
 
             let value = object[key];
             let type = this.getPrimitive(value);
@@ -1797,7 +1798,7 @@ class JsonReader {
                 }
             }
 
-            clazz.properties.push(new ClassField(type, k, ++i));
+            clazz.properties.push(new ClassField(type, k, ++i, true, false, true));
             clazz.classContent += `  final ${type} ${toVarName(k)};\n`;
 
             // If object is JSONArray, break after first item.
@@ -1864,8 +1865,8 @@ class JsonReader {
             // Import only inambigous generated types.
             // E.g. if there are multiple generated classes with
             // the same name, do not include an import of that class.
-            if (this.getGeneratedTypeCount(prop.listType.rawType) == 1) {
-                const imp = `import '${createFileName(prop.listType.rawType)}.dart';`;
+            if (this.getGeneratedTypeCount(prop.collectionType.rawType) == 1) {
+                const imp = `import '${createFileName(prop.collectionType.rawType)}.dart';`;
                 generator.imports.push(imp);
             }
         }
