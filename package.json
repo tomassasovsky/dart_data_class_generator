@@ -55,7 +55,7 @@
 							"snake_case"
 						],
 						"default": "variable",
-						"description": "The key format for json serialization."
+						"description": "Whether to use snake_case or camelCase for the json keys."
 					},
 					"dart_data_class_generator.quick_fixes": {
 						"type": "boolean",
