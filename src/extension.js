@@ -1,7 +1,6 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
-const { IndexKind } = require('typescript');
 
 var projectName = '';
 var isFlutter = false;
