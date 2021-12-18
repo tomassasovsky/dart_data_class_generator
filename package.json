@@ -1,26 +1,26 @@
 {
-	"name": "dart-data-class-generator",
-	"displayName": "Dart Data Class Generator",
+	"name": "dart-generator",
+	"displayName": "Dart Generator",
 	"description": "Create dart data classes easily, fast and without writing boilerplate or running code generation.",
-	"publisher": "BendixMa",
-	"version": "0.5.5",
+	"publisher": "TomasSasovsky",
+	"version": "0.0.2",
 	"engines": {
 		"vscode": "^1.37.0"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/bxqm/dart_data_class_generator"
+		"url": "https://github.com/tomassasovsky/dart_generator"
 	},
 	"icon": "assets/icon.png",
 	"keywords": [
-		"dart data class generator",
+		"dart generator",
 		"dart data class",
 		"dart data",
 		"dart",
-		"data class generator"
+		"generator"
 	],
 	"author": {
-		"name": "bxqm"
+		"name": "TomasSasovsky"
 	},
 	"categories": [
 		"Programming Languages",
@@ -28,26 +28,26 @@
 	],
 	"activationEvents": [
 		"onLanguage:dart",
-		"onCommand:dart_data_class.generate.from_props",
-		"onCommand:dart_data_class.generate.from_json"
+		"onCommand:dart_generator.generate.from_props",
+		"onCommand:dart_generator.generate.from_json"
 	],
 	"main": "./src/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"title": "Dart Data Class Generator: Generate from class properties",
-				"command": "dart_data_class.generate.from_props"
+				"title": "Dart Generator: Generate from class properties",
+				"command": "dart_generator.generate.from_props"
 			},
 			{
-				"title": "Dart Data Class Generator: Generate from JSON",
-				"command": "dart_data_class.generate.from_json"
+				"title": "Dart Generator: Generate from JSON",
+				"command": "dart_generator.generate.from_json"
 			}
 		],
 		"configuration": [
 			{
-				"title": "Dart Data Class Generator configuration",
+				"title": "Dart Generator configuration",
 				"properties": {
-					"dart_data_class_generator.json.key_format": {
+					"dart_generator.json.key_format": {
 						"type": "string",
 						"enum": [
 							"variable",
@@ -57,7 +57,7 @@
 						"default": "variable",
 						"description": "Whether to use snake_case or camelCase for the json keys."
 					},
-					"dart_data_class_generator.quick_fixes": {
+					"dart_generator.quick_fixes": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -66,7 +66,7 @@
 						"default": true,
 						"description": "If true, enables quick fixes to quickly generate data classes or specific methods only."
 					},
-					"dart_data_class_generator.fromMap.default_values": {
+					"dart_generator.fromMap.default_values": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -75,7 +75,7 @@
 						"default": false,
 						"description": "If true, checks if a field is null when deserializing and provides a non-null default value."
 					},
-					"dart_data_class_generator.constructor.default_values": {
+					"dart_generator.constructor.default_values": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -84,7 +84,7 @@
 						"default": false,
 						"description": "If true, generates default values for the constructor."
 					},
-					"dart_data_class_generator.constructor.required": {
+					"dart_generator.constructor.required": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -93,7 +93,7 @@
 						"default": false,
 						"description": "If true, generates the @required annotiation to every constructor parameter. Note: The generator wont generate default values for the constructor if enabled!"
 					},
-					"dart_data_class_generator.override.manual": {
+					"dart_generator.override.manual": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -102,7 +102,7 @@
 						"default": false,
 						"description": "If true, asks, when overriding a class (running the command on an existing class), for every single function/constructor that needs to be changed whether the generator should override the function or not. This allows you to preserve custom changes you made to the function/constructor that would be otherwise overwritten by the generator."
 					},
-					"dart_data_class_generator.json.seperate": {
+					"dart_generator.json.seperate": {
 						"type": "string",
 						"enum": [
 							"ask",
@@ -112,7 +112,7 @@
 						"default": "ask",
 						"description": "Whether to seperate a JSON into multiple files, when the JSON contains nested objects. ask: choose manually every time, seperate: always seperate into multiple files, current_file: always insert all classes into the current file."
 					},
-					"dart_data_class_generator.constructor.enabled": {
+					"dart_generator.constructor.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -121,7 +121,7 @@
 						"default": true,
 						"description": "If true, generates a constructor for a data class."
 					},
-					"dart_data_class_generator.copyWith.enabled": {
+					"dart_generator.copyWith.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -130,7 +130,7 @@
 						"default": true,
 						"description": "If true, generates a copyWith function for a data class."
 					},
-					"dart_data_class_generator.toMap.enabled": {
+					"dart_generator.toMap.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -139,7 +139,7 @@
 						"default": true,
 						"description": "If true, generates a toMap function for a data class."
 					},
-					"dart_data_class_generator.fromMap.enabled": {
+					"dart_generator.fromMap.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -148,7 +148,7 @@
 						"default": true,
 						"description": "If true, generates a fromMap function for a data class."
 					},
-					"dart_data_class_generator.toJson.enabled": {
+					"dart_generator.toJson.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -157,7 +157,7 @@
 						"default": true,
 						"description": "If true, generates a toJson function for a data class."
 					},
-					"dart_data_class_generator.fromJson.enabled": {
+					"dart_generator.fromJson.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -166,7 +166,7 @@
 						"default": true,
 						"description": "If true, generates a fromJson function for a data class."
 					},
-					"dart_data_class_generator.toString.enabled": {
+					"dart_generator.toString.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -175,7 +175,7 @@
 						"default": true,
 						"description": "If true, generates a toString function for a data class."
 					},
-					"dart_data_class_generator.equality.enabled": {
+					"dart_generator.equality.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -184,7 +184,7 @@
 						"default": true,
 						"description": "If true, generates an override of the == (equals) operator for a data class."
 					},
-					"dart_data_class_generator.hashCode.enabled": {
+					"dart_generator.hashCode.enabled": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -193,7 +193,7 @@
 						"default": true,
 						"description": "If true, generates a hashCode function for a data class."
 					},
-					"dart_data_class_generator.hashCode.use_jenkins": {
+					"dart_generator.hashCode.use_jenkins": {
 						"type": "boolean",
 						"enum": [
 							true,
@@ -202,7 +202,7 @@
 						"default": false,
 						"description": "If true, uses the Jenkins SMI hash function instead of bitwise operator from dart:ui."
 					},
-					"dart_data_class_generator.useEquatable": {
+					"dart_generator.useEquatable": {
 						"type": "boolean",
 						"enum": [
 							true,

@@ -3,6 +3,8 @@
 
 Create dart data classes easily, fast and without writing boilerplate or running code generation.  
 
+### Fork from [Dart Data Class Generator](https://github.com/bxqm/dart_data_class_generator)
+
 ## Features
 
 The generator can generate the constructor, copyWith, toMap, fromMap, toJson, fromJson, toString, operator == and hashCode methods for a class based on [class properties](#create-data-classes-based-on-class-properties) or [raw JSON](#create-data-classes-based-on-json-beta).
