@@ -11,14 +11,14 @@ var isFlutter = false;
 function activate(context) {
     context.subscriptions.push(
         vscode.commands.registerCommand(
-            'dart_data_class.generate.from_props',
+            'dart_generator.generate.from_props',
             generateDataClass
         )
     );
 
     context.subscriptions.push(
         vscode.commands.registerCommand(
-            'dart_data_class.generate.from_json',
+            'dart_generator.generate.from_json',
             generateJsonDataClass
         )
     );
@@ -2217,7 +2217,7 @@ async function writeFile(content, name, open = true, path = getCurrentPath()) {
         } while (fs.existsSync(p));
     }
 
-    fs.writeFileSync(p, content, 'utf-8');
+    fs.writeFileSync(p, content, 'utf8');
     if (open) {
         let openPath = vscode.Uri.parse("file:///" + p);
         let doc = await vscode.workspace.openTextDocument(openPath);
@@ -2510,7 +2510,7 @@ function getLangId() {
  * @param {string} key
  */
 function readSetting(key) {
-    return vscode.workspace.getConfiguration().get('dart_data_class_generator.' + key);
+    return vscode.workspace.getConfiguration().get('dart_generator_generator.' + key);
 }
 
 /**
